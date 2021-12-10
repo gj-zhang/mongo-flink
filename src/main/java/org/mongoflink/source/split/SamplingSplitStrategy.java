@@ -47,11 +47,11 @@ public class SamplingSplitStrategy implements MongoSplitStrategy, Serializable {
 
     @Override
     public List<MongoSplit> split() {
-        ImmutablePair<Long, Long> numAndAvgSize = getDocumentNumAndAvgSize();
+        ImmutablePair<Long, Double> numAndAvgSize = getDocumentNumAndAvgSize();
         long count = numAndAvgSize.left;
-        long avgSize = numAndAvgSize.right;
+        double avgSize = numAndAvgSize.right;
 
-        long numDocumentsPerSplit  = sizePerSplit / avgSize;
+        double numDocumentsPerSplit  = sizePerSplit / avgSize;
         int numSplits = (int) Math.ceil((double) count / numDocumentsPerSplit);
         int numSamples = (int) Math.floor(samplesPerSplit * numSplits);
 
@@ -68,12 +68,12 @@ public class SamplingSplitStrategy implements MongoSplitStrategy, Serializable {
         return createSplits(splitKey, rightBoundaries);
     }
 
-    private ImmutablePair<Long, Long> getDocumentNumAndAvgSize() {
+    private ImmutablePair<Long, Double> getDocumentNumAndAvgSize() {
         String collectionName = clientProvider.getDefaultCollection().getNamespace().getCollectionName();
         BsonDocument statsCmd = new BsonDocument("collStats", new BsonString(collectionName));
         Document res = clientProvider.getDefaultDatabase().runCommand(statsCmd);
         long total = res.getInteger("count");
-        long avgDocumentBytes = res.getInteger("avgObjSize");
+        double avgDocumentBytes = res.getDouble("avgObjSize");
         if (matchQuery == null || matchQuery.isEmpty()) {
             return ImmutablePair.of(total, avgDocumentBytes);
         } else {
